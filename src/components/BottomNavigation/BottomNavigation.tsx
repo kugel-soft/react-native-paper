@@ -45,6 +45,11 @@ type TabPressEvent = {
   preventDefault(): void;
 };
 
+type TabLongPressEvent = {
+  defaultPrevented: boolean;
+  preventDefault(): void;
+};
+
 type TouchableProps = TouchableWithoutFeedbackProps & {
   key: string;
   route: Route;
@@ -189,6 +194,10 @@ type Props = {
    * Function to execute on tab press. It receives the route for the pressed tab, useful for things like scroll to top.
    */
   onTabPress?: (props: { route: Route } & TabPressEvent) => void;
+    /**
+   * Function to execute on tab long press. It receives the route for the pressed tab, useful for things like scroll to top.
+   */
+  onTabLongPress?: (props: { route: Route } & TabLongPressEvent) => void;
   /**
    * Custom color for icon and label in the active tab.
    */
@@ -345,6 +354,7 @@ const BottomNavigation = ({
   theme,
   sceneAnimationEnabled = false,
   onTabPress,
+  onTabLongPress,
   onIndexChange,
   shifting = navigationState.routes.length > 3,
   safeAreaInsets,
@@ -519,6 +529,26 @@ const BottomNavigation = ({
     };
 
     onTabPress?.(event);
+
+    if (event.defaultPrevented) {
+      return;
+    }
+
+    if (index !== navigationState.index) {
+      onIndexChange(index);
+    }
+  };
+
+  const handleTabLongPress = (index: number) => {
+    const event = {
+      route: navigationState.routes[index],
+      defaultPrevented: false,
+      preventDefault: () => {
+        event.defaultPrevented = true;
+      },
+    };
+
+    onTabLongPress?.(event);
 
     if (event.defaultPrevented) {
       return;
@@ -765,6 +795,7 @@ const BottomNavigation = ({
                 centered: true,
                 rippleColor: touchColor,
                 onPress: () => handleTabPress(index),
+                onLongPress: () => handleTabLongPress(index),
                 testID: getTestID({ route }),
                 accessibilityLabel: getAccessibilityLabel({ route }),
                 // @ts-expect-error We keep old a11y props for backwards compat with old RN versions
